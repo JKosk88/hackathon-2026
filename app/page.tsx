@@ -13,11 +13,11 @@ export default function Home() {
           priority
         />
         <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-5xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            Hackathon
+          <h1 className="text-5xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
+            Hackathon{" "}
             <code className="rounded bg-black/[.06] px-3 py-0.5 mx-2 font-mono text-5xl dark:bg-white/[.08] border border-black/[.08] dark:border-white/[.145]">
               2026
-            </code>
+            </code>{" "}
             ⌨️
           </h1>
           <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
