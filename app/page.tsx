@@ -13,7 +13,7 @@ export default function Home() {
           priority
         />
         <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="text-5xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
+          <h1 className="text-5xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50 leading-16">
             Hackathon{" "}
             <code className="rounded bg-black/[.06] px-3 py-0.5 mx-2 font-mono text-5xl dark:bg-white/[.08] border border-black/[.08] dark:border-white/[.145]">
               2026
@@ -44,13 +44,19 @@ export default function Home() {
             <div className="bg-yellow-500 text-black w-full h-12 absolute top-0 transform group-hover:-translate-y-1/2 rounded-t-[24px] rounded-b-[24px] group-hover:rounded-b-[0px] transition-all duration-300 group-hover:shadow-[0_0_10px_5px_rgb(255_94_0)] flex justify-center">
               <span>Recommended</span>
             </div>
-            <div className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px] relative">
+            <a
+              href="https://github.com/JKosk88/hackathon-2026"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px] relative"
+            >
               Contribute 😎
-            </div>
+            </a>
           </div>
-          <div className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]">
+          <a
+            href="https://www.youtube.com/watch?v=Aq5WXmQQooo"
+            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
+          >
             Slack 😴
-          </div>
+          </a>
         </div>
       </main>
     </div>
