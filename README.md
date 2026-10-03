@@ -1,5 +1,11 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Event recommendations (SARA)
+
+Polish documentation for the Python recommendation module: [sara/README.md](sara/README.md).
+It covers user-ID-to-event-ID recommendations, scroll and repeat-visit signals,
+ranking, mock data, tests, and the database/API integration still to be implemented.
+
 ## Getting Started
 
 First, run the development server:
