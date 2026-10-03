@@ -1,64 +1,104 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import Link from "next/link";
+
+import { EventCard } from "@/app/components/EventCard";
+import { useLanguage } from "@/app/components/LanguageProvider";
+import { events } from "@/app/data/events";
+
+export default function HomePage() {
+  const { t } = useLanguage();
+  const newestEvents = events.slice(0, 3);
+  const featuredEvent = newestEvents[0];
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className=""
-          src="/hackyeah-logo.svg"
-          alt="HackYeah logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="text-5xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50 leading-16">
-            Hackathon{" "}
-            <code className="rounded bg-black/[.06] px-3 py-0.5 mx-2 font-mono text-5xl dark:bg-white/[.08] border border-black/[.08] dark:border-white/[.145]">
-              2026
-            </code>{" "}
-            ⌨️
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            GitHub repo:{" "}
-            <a
-              href="https://github.com/JKosk88/hackathon-2026"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              JKosk88/hackathon-2026
-            </a>
-          </p>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Vercel project:{" "}
-            <a
-              href="https://vercel.com/jakuns-projects/hackathon-2026"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              jakuns-projects/hackathon-2026
-            </a>
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <div className="relative group">
-            <div className="bg-yellow-500 text-black w-full h-12 absolute top-0 transform group-hover:-translate-y-1/2 rounded-t-[24px] rounded-b-[24px] group-hover:rounded-b-[0px] transition-all duration-300 group-hover:shadow-[0_0_10px_5px_rgb(255_94_0)] flex justify-center">
-              <span>Recommended</span>
+    <div className="space-y-10">
+      <section className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-white/70 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/75 dark:shadow-[0_24px_80px_rgba(2,6,23,0.38)]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.18),transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.12),transparent_30%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(96,165,250,0.14),transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.12),transparent_30%)]" />
+
+        <div className="relative grid gap-10 px-6 py-8 md:grid-cols-[1.2fr_0.8fr] md:px-10 lg:px-12 lg:py-12">
+          <div className="space-y-6">
+            <span className="inline-flex rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300">
+              {t("localExperiences")}
+            </span>
+
+            <div className="space-y-4">
+              <h1 className="max-w-lg text-4xl font-black tracking-[-0.05em] text-slate-900 md:text-5xl dark:text-white">
+                {t("discoverHeadline")}
+              </h1>
+              <p className="max-w-xl text-lg leading-8 text-slate-600 dark:text-slate-300">
+                {t("discoverText")}
+              </p>
             </div>
-            <a
-              href="https://github.com/JKosk88/hackathon-2026"
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px] relative"
-            >
-              Contribute 😎
-            </a>
+
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/events"
+                className="rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/15 transition-transform duration-200 hover:-translate-y-0.5 hover:bg-slate-700"
+              >
+                {t("browseEvents")}
+              </Link>
+              <Link
+                href="/post"
+                className="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
+                {t("hostEvent")}
+              </Link>
+            </div>
           </div>
-          <a
-            href="https://www.youtube.com/watch?v=Aq5WXmQQooo"
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-          >
-            Slack 😴
-          </a>
+
+          <div className="rounded-[28px] border border-slate-200 bg-slate-900 p-5 text-white shadow-[0_24px_60px_rgba(15,23,42,0.2)] dark:border-slate-700 dark:bg-slate-900">
+            <div className="rounded-[24px] bg-gradient-to-br from-amber-300 via-pink-500 to-violet-600 p-5 text-slate-900 shadow-inner">
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-900/80">
+                {t("newThisWeek")}
+              </p>
+              <h2 className="mt-4 text-3xl font-black leading-tight tracking-[-0.05em]">
+                {featuredEvent?.title ?? "Featured event"}
+              </h2>
+              <p className="mt-3 text-sm font-medium text-slate-900/85">
+                {featuredEvent
+                  ? `${featuredEvent.city} • ${featuredEvent.location} • ${featuredEvent.time}`
+                  : "City • Venue • Time"}
+              </p>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-300">
+                  {t("upcoming")}
+                </p>
+                <p className="mt-2 text-2xl font-bold text-white">1</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-300">
+                  {t("nearby")}
+                </p>
+                <p className="mt-2 text-2xl font-bold text-white">4.8 km</p>
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
+      </section>
+
+      <section className="space-y-6">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-2xl font-bold tracking-[-0.04em] text-slate-900 dark:text-white">
+            {t("newOnCityVibe")}
+          </h2>
+          <Link
+            href="/events"
+            className="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition-colors hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-white"
+          >
+            {t("seeAll")}
+          </Link>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {newestEvents.map((event) => (
+            <EventCard key={event.id} event={event} />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

@@ -1,0 +1,36 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cityvibe-bg" x1="18" y1="16" x2="110" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F172A"/>
+      <stop offset="1" stop-color="#4F46E5"/>
+    </linearGradient>
+    <linearGradient id="cityvibe-accent" x1="42" y1="33" x2="86" y2="92" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FDE68A"/>
+      <stop offset="1" stop-color="#F472B6"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="url(#cityvibe-bg)"/>
+
+  <path
+    d="M87 30C78 20 66 15 53 15C31 15 15 31 11 52C7 72 16 93 34 104C51 115 72 115 87 104"
+    stroke="white"
+    stroke-width="10"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <path
+    d="M49 42L64 83L79 42"
+    stroke="url(#cityvibe-accent)"
+    stroke-width="9"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M64 83L81 42"
+    stroke="url(#cityvibe-accent)"
+    stroke-width="9"
+    stroke-linecap="round"
+  />
+</svg>
