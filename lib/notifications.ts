@@ -27,7 +27,7 @@ export function isNotificationSupported(): boolean {
   return typeof window !== "undefined" && "Notification" in window;
 }
 
-export const subscribeUser2 = (applicationServerKey: string, token: string) => {
+export const subscribeUser2 = (applicationServerKey: string) => {
   const subscriptionOptions = {
     userVisibleOnly: true,
     applicationServerKey: applicationServerKey,
@@ -75,10 +75,30 @@ export const subscribeUser2 = (applicationServerKey: string, token: string) => {
   );
 };
 
+async function resolveClientIp(): Promise<string> {
+  try {
+    const response = await fetch("https://api.ipify.org?format=json", {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      return "";
+    }
+
+    const data = (await response.json()) as { ip?: string };
+    return typeof data.ip === "string" ? data.ip : "";
+  } catch {
+    return "";
+  }
+}
+
 export function subscribeUser(
   applicationServerKey: string,
   token: string,
-  endpointUrl = "/api/notifications/subscribe",
+  endpointUrl = "/api/notifications/subscribe/",
 ): Promise<NotificationSubscriptionResult> {
   return new Promise(async (resolve, reject) => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
@@ -105,30 +125,28 @@ export function subscribeUser(
       };
 
       const subscription = await registration.pushManager.subscribe(options);
-      console.log("Subscribed with options:", subscription);
       if (!subscription) {
         reject(new Error("Could not subscribe to push notifications."));
         return;
       }
 
-      const subscriptionPayload = subscription.toJSON();
-      const x = {
-        browserOrigin: window.location.origin,
-        subscribeEndpointUrl: endpointUrl,
-        endpoint: subscriptionPayload.endpoint,
-        expirationTime: subscriptionPayload.expirationTime ?? null,
-        keys: subscriptionPayload.keys ?? null,
+      const subscriptionInfo = JSON.stringify(subscription.toJSON());
+      const requestUrl = endpointUrl.startsWith("http")
+        ? endpointUrl
+        : `${window.location.origin}${endpointUrl}`;
+      const payload = {
+        subscription_info: subscriptionInfo,
+        user_agent: navigator.userAgent,
+        ip: await resolveClientIp(),
       };
-      window.navigator.clipboard.writeText(JSON.stringify(x));
-      console.info("[notifications] store this backend subscription", x);
 
-      const response = await fetch(`${window.location.origin}${endpointUrl}`, {
+      const response = await fetch(requestUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(subscriptionPayload),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -137,10 +155,9 @@ export function subscribeUser(
           "[notifications] failed to persist backend subscription",
           {
             browserOrigin: window.location.origin,
-            subscribeEndpointUrl: endpointUrl,
+            subscribeEndpointUrl: requestUrl,
             status: response.status,
             responseText: text || null,
-            endpoint: subscriptionPayload.endpoint,
           },
         );
         reject(
@@ -152,11 +169,8 @@ export function subscribeUser(
       const json = (await response.json()) as { uuid?: string };
       console.info("[notifications] backend subscription saved", {
         browserOrigin: window.location.origin,
-        subscribeEndpointUrl: endpointUrl,
+        subscribeEndpointUrl: requestUrl,
         backendSubscriptionUuid: json.uuid ?? "local",
-        endpoint: subscriptionPayload.endpoint,
-        expirationTime: subscriptionPayload.expirationTime ?? null,
-        keys: subscriptionPayload.keys ?? null,
       });
 
       resolve({
