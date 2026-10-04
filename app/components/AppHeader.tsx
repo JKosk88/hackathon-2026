@@ -34,11 +34,11 @@ export function AppHeader() {
     <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl shadow-[0_1px_0_rgba(15,23,42,0.04)] dark:border-slate-800 dark:bg-slate-950/80">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-lg shadow-slate-900/20">
+          <div className="flex h-9 w-9 items-center justify-center overflow-hidden bg-transparent">
             <img
-              src="/ct vaib.png"
+              src="/ct vab.png"
               alt="CityVibe"
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain"
             />
           </div>
           <div className="leading-none">
@@ -86,7 +86,7 @@ export function AppHeader() {
               href="/login"
               className="rounded-full bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-slate-900/15 transition-transform duration-200 hover:-translate-y-0.5 hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
             >
-              {t("exploreNow")}
+              {t("login")}
             </Link>
           )}
         </div>
@@ -203,7 +203,7 @@ export function AppHeader() {
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="rounded-2xl bg-slate-900 px-4 py-3 text-center text-sm font-medium text-white shadow-lg shadow-slate-900/15 transition-colors hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
                   >
-                    {t("exploreNow")}
+                    {t("login")}
                   </Link>
                 )}
               </div>

@@ -15,10 +15,16 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ["lifestyle", "entertainment", "travel"],
     icons: [
       {
-        src: "/icon.svg",
+        src: "/ct-vab-favicon.svg",
         sizes: "any",
         type: "image/svg+xml",
         purpose: "maskable",
+      },
+      {
+        src: "/ct vab.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
       },
     ],
   };

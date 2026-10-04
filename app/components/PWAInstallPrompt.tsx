@@ -63,11 +63,11 @@ export function PWAInstallPrompt() {
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
+    <div className="fixed inset-x-0 bottom-4 z-50 flex justify-center px-4 events-none pointer-events-none">
       <button
         type="button"
         onClick={handleInstall}
-        className="rounded-full border border-white/10 bg-slate-900/90 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-950/30 backdrop-blur transition hover:bg-slate-800"
+        className="events-all pointer-events-auto rounded-full border border-white/10 bg-slate-900/90 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-950/30 backdrop-blur transition hover:bg-slate-800"
       >
         Install CityVibe
       </button>

@@ -7,9 +7,6 @@ import type { EventItem } from "@/app/data/events";
 import {
   NOTIFICATION_STORAGE_KEY,
   getNotificationPermissionStatus,
-  showBrowserNotification,
-  showInAppNotification,
-  subscribeUser,
   type Reminder,
 } from "@/lib/notifications";
 
@@ -56,8 +53,14 @@ function persistReminders(nextReminders: Reminder[]) {
 export function useNotificationPreferences() {
   const [permission, setPermission] = useState<
     NotificationPermission | "unsupported"
-  >("unsupported");
-  const [reminders, setReminders] = useState<Reminder[]>([]);
+  >(() =>
+    typeof window === "undefined" || !("Notification" in window)
+      ? "unsupported"
+      : getNotificationPermissionStatus(),
+  );
+  const [reminders, setReminders] = useState<Reminder[]>(() =>
+    getStoredReminders(),
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -69,8 +72,6 @@ export function useNotificationPreferences() {
     };
 
     sharedReminders = getStoredReminders();
-    setPermission(getNotificationPermissionStatus());
-    setReminders(sharedReminders);
     listeners.add(syncReminders);
 
     const handleStorage = (event: StorageEvent) => {
@@ -145,10 +146,6 @@ export function useNotificationPreferences() {
     ];
     persistReminders(next);
     setReminders(next);
-    showBrowserNotification(
-      "Event reminder saved",
-      `${event.title} is now in your alerts.`,
-    );
     return true;
   };
 
@@ -176,7 +173,7 @@ export function EventNotificationToggle({ event }: { event: EventItem }) {
       type="button"
       onClick={() => toggleReminder(event)}
       className={[
-        "rounded-full border px-3.5 py-2.5 text-xs font-semibold transition-colors",
+        "whitespace-nowrap rounded-full border px-3.5 py-2.5 text-xs font-semibold transition-colors",
         enabled
           ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700/70 dark:bg-emerald-500/10 dark:text-emerald-300"
           : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700",
@@ -197,58 +194,6 @@ export function NotificationCenter() {
   const { permission, reminders, removeReminder, requestPermission } =
     useNotificationPreferences();
   const [isOpen, setIsOpen] = useState(false);
-
-  const handleSendTestNotification = async () => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    if (Notification.permission !== "granted") {
-      const granted = await requestPermission();
-      if (!granted) {
-        return;
-      }
-    }
-
-    const hasPublicKey = Boolean(
-      typeof process !== "undefined" &&
-      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-    );
-
-    console.log(
-      "Sending test notification 4",
-      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-    );
-    if (!hasPublicKey) {
-      console.warn(
-        "[notifications] NEXT_PUBLIC_VAPID_PUBLIC_KEY is missing, so no push subscription payload can be created for the backend.",
-      );
-    }
-
-    if (hasPublicKey) {
-      try {
-        await subscribeUser(
-          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY as string,
-          "",
-          "/api/notifications/subscribe",
-        );
-      } catch {
-        // Fall through to the standard in-browser alert if the backend is unavailable.
-      }
-    }
-
-    const delivered = showBrowserNotification(
-      "CityVibe update",
-      "A new local event just appeared near you.",
-    );
-
-    if (delivered) {
-      showInAppNotification(
-        "CityVibe update",
-        "A new local event just appeared near you.",
-      );
-    }
-  };
 
   const permissionLabel =
     permission === "granted"
@@ -306,15 +251,6 @@ export function NotificationCenter() {
                 className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
               >
                 {t("enableAlerts")}
-              </button>
-            ) : null}
-            {permission === "granted" ? (
-              <button
-                type="button"
-                onClick={handleSendTestNotification}
-                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
-                {t("testNotification")}zzz
               </button>
             ) : null}
           </div>

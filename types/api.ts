@@ -5,6 +5,18 @@ export type ApiEnvelope<T> = {
   token?: string;
 };
 
+export type PaginatedApiResponse<T> = {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+};
+
+export type EventTag = {
+  id?: string | number;
+  name: string;
+};
+
 export type BackendUser = {
   id?: string | number;
   email: string;
@@ -17,11 +29,21 @@ export type BackendUser = {
 };
 
 export type BackendEvent = {
-  id: string;
+  id: string | number;
   title: string;
-  category?: string;
-  summary?: string;
   description?: string;
+  summary?: string;
+  source?: string;
+  lem_tags?: EventTag[];
+  date_created?: string;
+  date_updated?: string;
+  start_date?: string;
+  end_date?: string;
+  photo_url?: string;
+  external_id?: string;
+  external_group_id?: string;
+  url?: string;
+  category?: string;
   city?: string;
   location?: string;
   date?: string;

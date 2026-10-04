@@ -1,4 +1,4 @@
-const CACHE_NAME = "cityvibe-v1";
+const CACHE_NAME = "cityvibe-v2";
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {
@@ -17,9 +17,9 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
-      icon: "/icon.svg",
+      icon: "/ct-vab-favicon.svg",
       tag,
-      badge: "/icon.svg",
+      badge: "/ct-vab-favicon.svg",
       vibrate: [200, 100, 200],
     }),
   );

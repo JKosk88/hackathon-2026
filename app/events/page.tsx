@@ -1,13 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useMemo } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { EventCard } from "@/app/components/EventCard";
 import { useLanguage } from "@/app/components/LanguageProvider";
+import {
+  categories,
+  type EventItem,
+  mapBackendEventToEventItem,
+} from "@/app/data/events";
 import { categoryLabels } from "@/app/i18n";
-import { categories, events } from "@/app/data/events";
+import { getEventsPage } from "@/lib/events";
+
+const MAX_FAILED_LOADS = 3;
+const LOAD_COOLDOWN_MS = 500;
 
 const monthMap: Record<string, number> = {
   Jan: 1,
@@ -39,117 +54,271 @@ function EventsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { language, t } = useLanguage();
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [failedLoads, setFailedLoads] = useState(0);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const currentPageRef = useRef(1);
+  const lastLoadAtRef = useRef(0);
+  const requestInFlightRef = useRef(false);
 
   const activeCategory = searchParams.get("category") ?? "all";
   const activeSort = searchParams.get("sort") ?? "soonest";
   const recommendationQuery = searchParams.get("q") ?? "";
+  const activeCategoryFilter =
+    activeCategory === "all" ? undefined : activeCategory;
+  const recommendedSearchFilter = recommendationQuery.trim() || undefined;
 
-  const getRecommendationScore = (
-    event: (typeof events)[number],
-    query: string,
-  ) => {
-    if (!query.trim()) {
-      return 0;
-    }
-
-    const normalizedQuery = query.toLowerCase();
-    const haystack = [
-      event.title,
-      event.summary,
-      event.description,
-      event.category,
-      event.city,
-      event.location,
-      event.tag,
-    ]
-      .join(" ")
-      .toLowerCase();
-
-    const synonyms: Record<string, string[]> = {
-      music: ["music", "concert", "band", "dj", "live", "sound"],
-      food: [
-        "food",
-        "restaurant",
-        "eat",
-        "dinner",
-        "market",
-        "snack",
-        "cuisine",
-      ],
-      art: [
-        "art",
-        "craft",
-        "creative",
-        "gallery",
-        "maker",
-        "workshop",
-        "painting",
-      ],
-      wellness: [
-        "wellness",
-        "yoga",
-        "mindful",
-        "fitness",
-        "relax",
-        "meditation",
-        "health",
-      ],
-      outdoors: [
-        "outdoor",
-        "park",
-        "bike",
-        "nature",
-        "sunset",
-        "greenway",
-        "hike",
-        "fresh air",
-      ],
-      nightlife: [
-        "night",
-        "late",
-        "dj",
-        "cocktails",
-        "party",
-        "club",
-        "after dark",
-      ],
-      family: ["family", "kids", "friendly", "group", "community"],
-      affordable: ["cheap", "budget", "free", "low cost", "affordable"],
-    };
-
-    let score = 0;
-    const queryTerms = normalizedQuery.split(/\s+/).filter(Boolean);
-
-    queryTerms.forEach((term) => {
-      if (haystack.includes(term)) {
-        score += 3;
+  const loadPage = useCallback(
+    async (pageNumber: number, append: boolean) => {
+      if (requestInFlightRef.current) {
+        return null;
       }
 
-      if (event.title.toLowerCase().includes(term)) {
-        score += 2;
-      }
+      requestInFlightRef.current = true;
 
-      if (event.summary.toLowerCase().includes(term)) {
-        score += 1;
-      }
+      try {
+        const page = await getEventsPage(pageNumber, {
+          categories: activeCategoryFilter,
+          search: recommendedSearchFilter,
+        });
+        const mappedEvents = page.results.map(mapBackendEventToEventItem);
 
-      Object.entries(synonyms).forEach(([key, values]) => {
-        if (
-          term === key ||
-          values.some((value) => value.includes(term) || term.includes(value))
-        ) {
-          if (
-            event.category.toLowerCase().includes(key) ||
-            haystack.includes(key)
-          ) {
-            score += 4;
-          }
+        setEvents((currentEvents) =>
+          append ? [...currentEvents, ...mappedEvents] : mappedEvents,
+        );
+        currentPageRef.current = pageNumber;
+        setHasMore(Boolean(page.next));
+        setFailedLoads(0);
+        return page;
+      } catch {
+        setFailedLoads((current) => {
+          const nextFailedLoads = current + 1;
+          setHasMore(nextFailedLoads < MAX_FAILED_LOADS);
+          return nextFailedLoads;
+        });
+        return null;
+      } finally {
+        requestInFlightRef.current = false;
+      }
+    },
+    [activeCategoryFilter, recommendedSearchFilter],
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+
+    setIsLoading(true);
+    setEvents([]);
+    setHasMore(true);
+
+    getEventsPage(1, {
+      categories: activeCategoryFilter,
+      search: recommendedSearchFilter,
+    })
+      .then((page) => {
+        if (!isMounted) {
+          return;
+        }
+
+        const mapped = page.results.map(mapBackendEventToEventItem);
+        setEvents(mapped);
+        currentPageRef.current = 1;
+        setHasMore(Boolean(page.next));
+        setFailedLoads(0);
+      })
+      .catch(() => {
+        if (isMounted) {
+          setEvents([]);
+          setHasMore(false);
+          setFailedLoads((current) => current + 1);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
         }
       });
-    });
 
-    return score;
-  };
+    return () => {
+      isMounted = false;
+    };
+  }, [activeCategoryFilter, recommendedSearchFilter]);
+
+  const loadMore = useCallback(async () => {
+    const now = Date.now();
+
+    if (requestInFlightRef.current || isLoadingMore || !hasMore) {
+      return;
+    }
+
+    if (failedLoads >= MAX_FAILED_LOADS) {
+      setHasMore(false);
+      return;
+    }
+
+    if (now - lastLoadAtRef.current < LOAD_COOLDOWN_MS) {
+      return;
+    }
+
+    lastLoadAtRef.current = now;
+    setIsLoadingMore(true);
+
+    try {
+      await loadPage(currentPageRef.current + 1, true);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [failedLoads, hasMore, isLoadingMore, loadPage]);
+
+  useEffect(() => {
+    const sentinel = loadMoreRef.current;
+
+    if (!sentinel || !hasMore || isLoading) {
+      return;
+    }
+
+    let isDisposed = false;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isDisposed || !entries.some((entry) => entry.isIntersecting)) {
+          return;
+        }
+
+        if (
+          requestInFlightRef.current ||
+          isLoadingMore ||
+          failedLoads >= MAX_FAILED_LOADS
+        ) {
+          return;
+        }
+
+        if (Date.now() - lastLoadAtRef.current < LOAD_COOLDOWN_MS) {
+          return;
+        }
+
+        void loadMore();
+      },
+      { rootMargin: "200px" },
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      isDisposed = true;
+      observer.disconnect();
+    };
+  }, [failedLoads, hasMore, isLoading, isLoadingMore, loadMore]);
+
+  const getRecommendationScore = useCallback(
+    (event: (typeof events)[number], query: string) => {
+      if (!query.trim()) {
+        return 0;
+      }
+
+      const normalizedQuery = query.toLowerCase();
+      const haystack = [
+        event.title,
+        event.summary,
+        event.description,
+        event.category,
+        event.city,
+        event.location,
+        event.tag,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      const synonyms: Record<string, string[]> = {
+        music: ["music", "concert", "band", "dj", "live", "sound"],
+        food: [
+          "food",
+          "restaurant",
+          "eat",
+          "dinner",
+          "market",
+          "snack",
+          "cuisine",
+        ],
+        art: [
+          "art",
+          "craft",
+          "creative",
+          "gallery",
+          "maker",
+          "workshop",
+          "painting",
+        ],
+        wellness: [
+          "wellness",
+          "yoga",
+          "mindful",
+          "fitness",
+          "relax",
+          "meditation",
+          "health",
+        ],
+        outdoors: [
+          "outdoor",
+          "park",
+          "bike",
+          "nature",
+          "sunset",
+          "greenway",
+          "hike",
+          "fresh air",
+        ],
+        nightlife: [
+          "night",
+          "late",
+          "dj",
+          "cocktails",
+          "party",
+          "club",
+          "after dark",
+        ],
+        family: ["family", "kids", "friendly", "group", "community"],
+        affordable: ["cheap", "budget", "free", "low cost", "affordable"],
+      };
+
+      let score = 0;
+      const queryTerms = normalizedQuery.split(/\s+/).filter(Boolean);
+
+      queryTerms.forEach((term) => {
+        if (haystack.includes(term)) {
+          score += 3;
+        }
+
+        if (event.title.toLowerCase().includes(term)) {
+          score += 2;
+        }
+
+        if (event.summary.toLowerCase().includes(term)) {
+          score += 1;
+        }
+
+        Object.entries(synonyms).forEach(([key, values]) => {
+          if (
+            term === key ||
+            values.some((value) => value.includes(term) || term.includes(value))
+          ) {
+            if (
+              event.category.toLowerCase().includes(key) ||
+              haystack.includes(key)
+            ) {
+              score += 4;
+            }
+          }
+        });
+      });
+
+      return score;
+    },
+    [],
+  );
 
   const filteredEvents = useMemo(() => {
     const categoryEvents =
@@ -204,7 +373,13 @@ function EventsContent() {
 
       return parseEventDate(left.date) - parseEventDate(right.date);
     });
-  }, [activeCategory, activeSort, recommendationQuery]);
+  }, [
+    activeCategory,
+    activeSort,
+    events,
+    getRecommendationScore,
+    recommendationQuery,
+  ]);
 
   const applyFilters = (updates: Record<string, string | null>) => {
     const nextParams = new URLSearchParams(searchParams.toString());
@@ -336,12 +511,28 @@ function EventsContent() {
         </div>
       ) : null}
 
-      {filteredEvents.length > 0 ? (
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredEvents.map((event) => (
-            <EventCard key={event.id} event={event} />
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="h-72 rounded-[28px] bg-slate-100" />
           ))}
-        </section>
+        </div>
+      ) : filteredEvents.length > 0 ? (
+        <>
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredEvents.map((event) => (
+              <EventCard key={event.id} event={event} />
+            ))}
+          </section>
+
+          {hasMore ? (
+            <div ref={loadMoreRef} className="flex justify-center py-4">
+              <div className="text-sm text-slate-500 dark:text-slate-400">
+                {isLoadingMore ? "Loading more events..." : "Scroll for more"}
+              </div>
+            </div>
+          ) : null}
+        </>
       ) : (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-700">
           {t("noMatches")}

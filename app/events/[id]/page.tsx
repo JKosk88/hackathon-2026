@@ -1,43 +1,74 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { notFound, useParams } from "next/navigation";
 
-import {
-  EventNotificationToggle,
-  useNotificationPreferences,
-} from "@/app/components/NotificationCenter";
+import { EventNotificationToggle } from "@/app/components/NotificationCenter";
 import { useLanguage } from "@/app/components/LanguageProvider";
-import { events } from "@/app/data/events";
-import { showBrowserNotification } from "@/lib/notifications";
+import { mapBackendEventToEventItem, type EventItem } from "@/app/data/events";
+import { getEventById } from "@/lib/events";
 
 export default function EventDetailPage() {
   const params = useParams<{ id: string }>();
   const { t } = useLanguage();
-  const { requestPermission } = useNotificationPreferences();
-  const event = events.find((item) => item.id === params.id);
+  const [event, setEvent] = useState<EventItem | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    setIsLoading(true);
+    setEvent(null);
+
+    getEventById(params.id)
+      .then((backendEvent) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setEvent(
+          backendEvent ? mapBackendEventToEventItem(backendEvent) : null,
+        );
+      })
+      .catch(() => {
+        if (isMounted) {
+          setEvent(null);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [params.id]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <div className="h-5 w-32 rounded-full bg-slate-100 dark:bg-slate-800" />
+        <article className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
+          <div className="h-72 w-full bg-slate-100 dark:bg-slate-800" />
+          <div className="grid gap-8 p-8 lg:grid-cols-[1.6fr_0.9fr]">
+            <div className="space-y-4">
+              <div className="h-6 w-40 rounded-full bg-slate-100 dark:bg-slate-800" />
+              <div className="h-12 w-3/4 rounded-2xl bg-slate-100 dark:bg-slate-800" />
+              <div className="h-24 rounded-3xl bg-slate-100 dark:bg-slate-800" />
+            </div>
+            <div className="h-56 rounded-3xl bg-slate-100 dark:bg-slate-800" />
+          </div>
+        </article>
+      </div>
+    );
+  }
 
   if (!event) {
     notFound();
   }
-
-  const handleSendEventAlert = async () => {
-    if (typeof window === "undefined" || !("Notification" in window)) {
-      return;
-    }
-
-    if (Notification.permission !== "granted") {
-      const granted = await requestPermission();
-      if (!granted) {
-        return;
-      }
-    }
-
-    showBrowserNotification(
-      `${event.title} is coming up`,
-      `${event.date} at ${event.time} • ${event.location}`,
-    );
-  };
 
   return (
     <div className="space-y-8">
@@ -49,7 +80,21 @@ export default function EventDetailPage() {
       </Link>
 
       <article className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
-        <div className="h-72 w-full" style={{ background: event.accent }} />
+        <div className="relative h-72 w-full overflow-hidden">
+          {event.image ? (
+            <img
+              src={event.image}
+              alt={event.title}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : (
+            <div
+              className="absolute inset-0"
+              style={{ background: event.accent }}
+            />
+          )}
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.04),rgba(15,23,42,0.18))]" />
+        </div>
 
         <div className="grid gap-8 p-8 lg:grid-cols-[1.6fr_0.9fr]">
           <div className="space-y-6">
@@ -124,15 +169,18 @@ export default function EventDetailPage() {
             </div>
 
             <div className="space-y-3">
+              {event.url ? (
+                <a
+                  href={event.url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex w-full items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-100"
+                >
+                  {t("visitEventWebsite")}
+                </a>
+              ) : null}
               <button className="w-full rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-slate-700">
                 {t("saveThisEvent")}
-              </button>
-              <button
-                type="button"
-                onClick={handleSendEventAlert}
-                className="w-full rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-              >
-                {t("sendEventAlert")}
               </button>
               <EventNotificationToggle event={event} />
             </div>

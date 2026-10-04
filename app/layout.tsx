@@ -28,8 +28,11 @@ export const metadata: Metadata = {
   applicationName: "CityVibe",
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
+    icon: [
+      { url: "/ct-vab-favicon.svg", type: "image/svg+xml" },
+      { url: "/ct vab.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [{ url: "/ct-vab-favicon.svg", type: "image/svg+xml" }],
   },
   appleWebApp: {
     capable: true,

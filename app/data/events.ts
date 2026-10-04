@@ -1,10 +1,46 @@
-export type EventCategory =
-  | "Music"
-  | "Food"
-  | "Art"
-  | "Wellness"
-  | "Outdoors"
-  | "Nightlife";
+import type { BackendEvent } from "@/types/api";
+
+export const categories = [
+  { name: "All", slug: "all" },
+  { name: "Kultura", slug: "kultura" },
+  { name: "Wystawy", slug: "wystawy" },
+  { name: "Koncerty", slug: "koncerty" },
+  { name: "Rock Pop", slug: "rock-pop" },
+  { name: "Muzyka klasyczna", slug: "muzyka-klasyczna" },
+  {
+    name: "Muzyka elektroniczna/Techno",
+    slug: "muzyka-elektroniczna-techno",
+  },
+  {
+    name: "Hard & Heavy / Metal / Punk",
+    slug: "hard-heavy-metal-punk",
+  },
+  { name: "Jazz", slug: "jazz" },
+  { name: "Opera i operetka", slug: "opera-i-operetka" },
+  { name: "Alternatywa", slug: "alternatywa" },
+  { name: "Rozrywka", slug: "rozrywka" },
+  { name: "Dla dzieci", slug: "dla-dzieci" },
+  { name: "Balet/Taniec", slug: "balet-taniec" },
+  { name: "Muzyka filmowa", slug: "muzyka-filmowa" },
+  { name: "Rap/Hip Hop", slug: "rap-hip-hop" },
+  { name: "Pozostałe", slug: "pozostale" },
+  { name: "Kabarety/Stand up", slug: "kabarety-stand-up" },
+  { name: "Teatr", slug: "teatr" },
+  { name: "Folk/World/Reggae", slug: "folk-world-reggae" },
+  { name: "Sport", slug: "sport" },
+  { name: "Siatkówka", slug: "siatkowka" },
+] as const;
+
+export type EventCategory = Exclude<(typeof categories)[number]["name"], "All">;
+
+const validEventCategories = new Map(
+  categories
+    .filter((category) => category.slug !== "all")
+    .map((category) => [
+      category.name.toLowerCase(),
+      category.name as EventCategory,
+    ]),
+);
 
 export type EventItem = {
   id: string;
@@ -12,6 +48,7 @@ export type EventItem = {
   category: EventCategory;
   summary: string;
   description: string;
+  url?: string;
   city: string;
   location: string;
   date: string;
@@ -20,23 +57,142 @@ export type EventItem = {
   organizer: string;
   tag: string;
   accent: string;
+  image?: string;
 };
 
-export const categories = [
-  { name: "All", slug: "all" },
-  { name: "Music", slug: "music" },
-  { name: "Food", slug: "food" },
-  { name: "Art", slug: "art" },
-  { name: "Wellness", slug: "wellness" },
-  { name: "Outdoors", slug: "outdoors" },
-  { name: "Nightlife", slug: "nightlife" },
-] as const;
+export function normalizeEventCategory(rawCategory?: string): EventCategory {
+  const nextCategory = (rawCategory ?? "Pozostałe").trim().toLowerCase();
+
+  const directMatch = validEventCategories.get(nextCategory);
+
+  if (directMatch) {
+    return directMatch;
+  }
+
+  switch (nextCategory) {
+    case "culture":
+    case "kultura":
+      return "Kultura";
+    case "art":
+    case "creative":
+    case "wystawa":
+    case "wystawy":
+    case "exhibition":
+      return "Wystawy";
+    case "music":
+    case "concert":
+    case "koncert":
+    case "koncerty":
+    case "festival":
+      return "Koncerty";
+    case "rock":
+    case "pop":
+      return "Rock Pop";
+    case "classical":
+      return "Muzyka klasyczna";
+    case "techno":
+    case "electronic":
+    case "elektroniczna":
+      return "Muzyka elektroniczna/Techno";
+    case "metal":
+    case "punk":
+    case "hardcore":
+      return "Hard & Heavy / Metal / Punk";
+    case "jazz":
+      return "Jazz";
+    case "opera":
+    case "operetta":
+      return "Opera i operetka";
+    case "alternative":
+      return "Alternatywa";
+    case "entertainment":
+    case "rozrywka":
+    case "nightlife":
+      return "Rozrywka";
+    case "kids":
+    case "children":
+      return "Dla dzieci";
+    case "dance":
+    case "ballet":
+      return "Balet/Taniec";
+    case "film":
+    case "soundtrack":
+      return "Muzyka filmowa";
+    case "rap":
+    case "hip hop":
+    case "hip-hop":
+      return "Rap/Hip Hop";
+    case "cabaret":
+    case "standup":
+    case "stand-up":
+      return "Kabarety/Stand up";
+    case "theatre":
+    case "theater":
+      return "Teatr";
+    case "folk":
+    case "world":
+    case "reggae":
+      return "Folk/World/Reggae";
+    case "sport":
+      return "Sport";
+    case "volleyball":
+    case "siatkowka":
+    case "siatkówka":
+      return "Siatkówka";
+    default:
+      return "Pozostałe";
+  }
+}
+
+export function mapBackendEventToEventItem(event: BackendEvent): EventItem {
+  const fallbackDate = new Date(
+    event.start_date ?? event.date_created ?? Date.now(),
+  );
+  const formattedDate = Number.isNaN(fallbackDate.getTime())
+    ? "Date TBD"
+    : new Intl.DateTimeFormat("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      }).format(fallbackDate);
+  const formattedTime = Number.isNaN(fallbackDate.getTime())
+    ? "Time TBD"
+    : new Intl.DateTimeFormat("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(fallbackDate);
+  const primaryTag = event.lem_tags?.[0]?.name ?? event.source ?? "Community";
+
+  return {
+    id: String(event.id),
+    title: event.title || "Untitled event",
+    category: normalizeEventCategory(
+      event.category ?? primaryTag ?? "Pozostałe",
+    ),
+    summary:
+      event.summary ||
+      event.description ||
+      "A community event with local highlights and a vibrant atmosphere.",
+    description:
+      event.description || event.summary || "No description provided.",
+    url: event.url || undefined,
+    city: event.source || "Local city",
+    location: event.url ? "See event details" : "Location TBD",
+    date: formattedDate,
+    time: formattedTime,
+    price: "TBD",
+    organizer: event.source || "Local organizer",
+    tag: event.lem_tags?.map((tag) => tag.name).join(" • ") || primaryTag,
+    accent: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
+    image: event.photo_url || undefined,
+  };
+}
 
 export const events: EventItem[] = [
   {
     id: "sunset-market-live",
     title: "Sunset Market & Live Music",
-    category: "Food",
+    category: "Rozrywka",
     summary: "Local food stalls and acoustic sets by neighborhood artists.",
     description:
       "Spending the evening with local chefs, vintage finds, and a live music line-up that turns the riverfront into a vibrant community stage.",
@@ -52,7 +208,7 @@ export const events: EventItem[] = [
   {
     id: "harbor-sound-festival",
     title: "Harbor Sound Live",
-    category: "Music",
+    category: "Koncerty",
     summary:
       "An indie-pop evening with waterfront performances and pop-up food trucks.",
     description:
@@ -69,7 +225,7 @@ export const events: EventItem[] = [
   {
     id: "maker-studio-saturday",
     title: "Maker Studio Saturday",
-    category: "Art",
+    category: "Wystawy",
     summary:
       "Hands-on art sessions for beginners and experienced creators alike.",
     description:
@@ -86,7 +242,7 @@ export const events: EventItem[] = [
   {
     id: "sunrise-yoga-on-the-park",
     title: "Sunrise Yoga in the Park",
-    category: "Wellness",
+    category: "Sport",
     summary: "A gentle outdoor yoga flow followed by a coffee social.",
     description:
       "Start your weekend with a guided mindful practice, stretching, and a calm social hour with your neighborhood wellness community.",
@@ -102,7 +258,7 @@ export const events: EventItem[] = [
   {
     id: "night-market-lights",
     title: "Night Market Lights",
-    category: "Nightlife",
+    category: "Rozrywka",
     summary:
       "Lantern-lit street market with DJs, cocktails, and late-night bites.",
     description:
@@ -119,7 +275,7 @@ export const events: EventItem[] = [
   {
     id: "greenway-bike-social",
     title: "Greenway Bike Social",
-    category: "Outdoors",
+    category: "Sport",
     summary: "A casual cycling route with picnic stops and a sunset finale.",
     description:
       "Join a social ride through the city greenway, connect with other cyclists, and end the night with a relaxed picnic by the water.",
