@@ -1,14 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { EventCard } from "@/app/components/EventCard";
@@ -24,31 +17,37 @@ import { getEventsPage } from "@/lib/events";
 const MAX_FAILED_LOADS = 3;
 const LOAD_COOLDOWN_MS = 500;
 
-const monthMap: Record<string, number> = {
-  Jan: 1,
-  Feb: 2,
-  Mar: 3,
-  Apr: 4,
-  May: 5,
-  Jun: 6,
-  Jul: 7,
-  Aug: 8,
-  Sep: 9,
-  Oct: 10,
-  Nov: 11,
-  Dec: 12,
+const orderingOptions = [
+  "recommended",
+  "start_date",
+  "end_date",
+  "title",
+  "-start_date",
+  "-end_date",
+  "-title",
+] as const;
+
+type SortOption = (typeof orderingOptions)[number];
+type EventOrdering = Exclude<SortOption, "recommended">;
+
+const orderingLabelKeys: Record<
+  SortOption,
+  | "sortRecommended"
+  | "sortStartDateAsc"
+  | "sortStartDateDesc"
+  | "sortEndDateAsc"
+  | "sortEndDateDesc"
+  | "sortTitleAsc"
+  | "sortTitleDesc"
+> = {
+  recommended: "sortRecommended",
+  start_date: "sortStartDateAsc",
+  end_date: "sortEndDateAsc",
+  title: "sortTitleAsc",
+  "-start_date": "sortStartDateDesc",
+  "-end_date": "sortEndDateDesc",
+  "-title": "sortTitleDesc",
 };
-
-function parseEventDate(date: string) {
-  const match = date.match(/(?:\w{3},\s+)?([A-Za-z]{3})\s+(\d{1,2})/);
-
-  if (!match) {
-    return Number.MAX_SAFE_INTEGER;
-  }
-
-  const [, monthName, day] = match;
-  return (monthMap[monthName] ?? 12) * 100 + Number(day);
-}
 
 function EventsContent() {
   const router = useRouter();
@@ -66,11 +65,17 @@ function EventsContent() {
   const requestInFlightRef = useRef(false);
 
   const activeCategory = searchParams.get("category") ?? "All";
-  const activeSort = searchParams.get("sort") ?? "soonest";
+  const requestedOrdering = searchParams.get("ordering");
+  const activeSort: SortOption = orderingOptions.includes(
+    requestedOrdering as EventOrdering,
+  )
+    ? (requestedOrdering as EventOrdering)
+    : "recommended";
   const recommendationQuery = searchParams.get("q") ?? "";
   const activeCategoryFilter =
     activeCategory === "All" ? undefined : activeCategory;
   const recommendedSearchFilter = recommendationQuery.trim() || undefined;
+  const apiOrdering = activeSort === "recommended" ? undefined : activeSort;
 
   const loadPage = useCallback(
     async (pageNumber: number, append: boolean) => {
@@ -83,6 +88,7 @@ function EventsContent() {
       try {
         const page = await getEventsPage(pageNumber, {
           categories: activeCategoryFilter,
+          ordering: apiOrdering,
           search: recommendedSearchFilter,
         });
         const mappedEvents = page.results.map(mapBackendEventToEventItem);
@@ -106,7 +112,7 @@ function EventsContent() {
         requestInFlightRef.current = false;
       }
     },
-    [activeCategoryFilter, recommendedSearchFilter],
+    [activeCategoryFilter, apiOrdering, recommendedSearchFilter],
   );
 
   useEffect(() => {
@@ -118,6 +124,7 @@ function EventsContent() {
 
     getEventsPage(1, {
       categories: activeCategoryFilter,
+      ordering: apiOrdering,
       search: recommendedSearchFilter,
     })
       .then((page) => {
@@ -148,7 +155,7 @@ function EventsContent() {
     return () => {
       isMounted = false;
     };
-  }, [activeCategoryFilter, recommendedSearchFilter]);
+  }, [activeCategoryFilter, apiOrdering, recommendedSearchFilter]);
 
   const loadMore = useCallback(async () => {
     const now = Date.now();
@@ -323,38 +330,6 @@ function EventsContent() {
     [],
   );
 
-  const filteredEvents = useMemo(() => {
-    const scoredEvents = events.map((event) => ({
-      event,
-      score: getRecommendationScore(event, recommendationQuery),
-    }));
-
-    if (recommendationQuery.trim()) {
-      return scoredEvents
-        .sort((left, right) => {
-          const scoreDiff = right.score - left.score;
-          if (scoreDiff !== 0) {
-            return scoreDiff;
-          }
-
-          return left.event.title.localeCompare(right.event.title);
-        })
-        .map(({ event }) => event);
-    }
-
-    return [...events].sort((left, right) => {
-      if (activeSort === "title") {
-        return left.title.localeCompare(right.title);
-      }
-
-      if (activeSort === "latest") {
-        return parseEventDate(right.date) - parseEventDate(left.date);
-      }
-
-      return parseEventDate(left.date) - parseEventDate(right.date);
-    });
-  }, [activeSort, events, getRecommendationScore, recommendationQuery]);
-
   const applyFilters = (updates: Record<string, string | null>) => {
     const nextParams = new URLSearchParams(searchParams.toString());
 
@@ -464,12 +439,21 @@ function EventsContent() {
             <select
               id="sort-events"
               value={activeSort}
-              onChange={(event) => applyFilters({ sort: event.target.value })}
+              onChange={(event) =>
+                applyFilters({
+                  ordering:
+                    event.target.value === "recommended"
+                      ? null
+                      : event.target.value,
+                })
+              }
               className="rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition-colors focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:focus:border-slate-500"
             >
-              <option value="soonest">{t("soonest")}</option>
-              <option value="latest">{t("latest")}</option>
-              <option value="title">{t("title")}</option>
+              {orderingOptions.map((option) => (
+                <option key={option} value={option}>
+                  {t(orderingLabelKeys[option])}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -488,10 +472,10 @@ function EventsContent() {
             <div key={index} className="h-72 rounded-[28px] bg-slate-100" />
           ))}
         </div>
-      ) : filteredEvents.length > 0 ? (
+      ) : events.length > 0 ? (
         <>
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filteredEvents.map((event) => (
+            {events.map((event) => (
               <EventCard key={event.id} event={event} />
             ))}
           </section>

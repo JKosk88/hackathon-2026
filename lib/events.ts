@@ -9,6 +9,7 @@ export type EventFilters = {
   categories?: string | string[] | null;
   category?: string | string[] | null;
   search?: string | null;
+  ordering?: string | null;
 };
 
 function appendFilterValues(
@@ -43,6 +44,10 @@ export function buildEventsQueryString(
 
   if (filters.search && filters.search.trim()) {
     params.set("search", filters.search.trim());
+  }
+
+  if (filters.ordering && filters.ordering.trim()) {
+    params.set("ordering", filters.ordering.trim());
   }
 
   return params.toString();
