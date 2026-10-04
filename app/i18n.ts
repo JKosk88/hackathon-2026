@@ -71,7 +71,6 @@ export const messages = {
     soonest: "Soonest",
     latest: "Latest",
     title: "Title",
-    price: "Price",
     noMatches: "No events match this filter yet.",
     saved: "Saved",
     favoriteLocalPicks: "Your favorite local picks",
@@ -89,7 +88,6 @@ export const messages = {
     description: "Description",
     descriptionPlaceholder:
       "Tell people what makes this event worth attending...",
-    pricePlaceholder: "Free or $20",
     submitEvent: "Submit event",
     eventNotFound: "Event not found",
     eventNotFoundDescription:
@@ -146,7 +144,6 @@ export const messages = {
     soonest: "Najbliższe",
     latest: "Najnowsze",
     title: "Tytuł",
-    price: "Cena",
     noMatches: "Brak wydarzeń spełniających ten filtr.",
     saved: "Zapisane",
     favoriteLocalPicks: "Twoje ulubione lokalne miejsca",
@@ -164,7 +161,6 @@ export const messages = {
     description: "Opis",
     descriptionPlaceholder:
       "Opowiedz, co sprawia, że warto odwiedzić to wydarzenie...",
-    pricePlaceholder: "Darmowe albo 20 zł",
     submitEvent: "Dodaj wydarzenie",
     eventNotFound: "Nie znaleziono wydarzenia",
     eventNotFoundDescription:

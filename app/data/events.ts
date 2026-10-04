@@ -1,45 +1,36 @@
 import type { BackendEvent } from "@/types/api";
 
 export const categories = [
-  { name: "All", slug: "all" },
-  { name: "Kultura", slug: "kultura" },
-  { name: "Wystawy", slug: "wystawy" },
-  { name: "Koncerty", slug: "koncerty" },
-  { name: "Rock Pop", slug: "rock-pop" },
-  { name: "Muzyka klasyczna", slug: "muzyka-klasyczna" },
-  {
-    name: "Muzyka elektroniczna/Techno",
-    slug: "muzyka-elektroniczna-techno",
-  },
-  {
-    name: "Hard & Heavy / Metal / Punk",
-    slug: "hard-heavy-metal-punk",
-  },
-  { name: "Jazz", slug: "jazz" },
-  { name: "Opera i operetka", slug: "opera-i-operetka" },
-  { name: "Alternatywa", slug: "alternatywa" },
-  { name: "Rozrywka", slug: "rozrywka" },
-  { name: "Dla dzieci", slug: "dla-dzieci" },
-  { name: "Balet/Taniec", slug: "balet-taniec" },
-  { name: "Muzyka filmowa", slug: "muzyka-filmowa" },
-  { name: "Rap/Hip Hop", slug: "rap-hip-hop" },
-  { name: "Pozostałe", slug: "pozostale" },
-  { name: "Kabarety/Stand up", slug: "kabarety-stand-up" },
-  { name: "Teatr", slug: "teatr" },
-  { name: "Folk/World/Reggae", slug: "folk-world-reggae" },
-  { name: "Sport", slug: "sport" },
-  { name: "Siatkówka", slug: "siatkowka" },
+  "All",
+  "Kultura",
+  "Wystawy",
+  "Koncerty",
+  "Rock Pop",
+  "Muzyka klasyczna",
+  "Muzyka elektroniczna/Techno",
+  "Hard & Heavy / Metal / Punk",
+  "Jazz",
+  "Opera i operetka",
+  "Alternatywa",
+  "Rozrywka",
+  "Dla dzieci",
+  "Balet/Taniec",
+  "Muzyka filmowa",
+  "Rap/Hip Hop",
+  "Pozostałe",
+  "Kabarety/Stand up",
+  "Teatr",
+  "Folk/World/Reggae",
+  "Sport",
+  "Siatkówka",
 ] as const;
 
-export type EventCategory = Exclude<(typeof categories)[number]["name"], "All">;
+export type EventCategory = Exclude<(typeof categories)[number], "All">;
 
 const validEventCategories = new Map(
   categories
-    .filter((category) => category.slug !== "all")
-    .map((category) => [
-      category.name.toLowerCase(),
-      category.name as EventCategory,
-    ]),
+    .filter((category) => category !== "All")
+    .map((category) => [category.toLowerCase(), category as EventCategory]),
 );
 
 export type EventItem = {
@@ -53,7 +44,6 @@ export type EventItem = {
   location: string;
   date: string;
   time: string;
-  price: string;
   organizer: string;
   tag: string;
   accent: string;
@@ -180,7 +170,6 @@ export function mapBackendEventToEventItem(event: BackendEvent): EventItem {
     location: event.url ? "See event details" : "Location TBD",
     date: formattedDate,
     time: formattedTime,
-    price: "TBD",
     organizer: event.source || "Local organizer",
     tag: event.lem_tags?.map((tag) => tag.name).join(" • ") || primaryTag,
     accent: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
@@ -200,7 +189,6 @@ export const events: EventItem[] = [
     location: "Riverfront Plaza",
     date: "Fri, Apr 18",
     time: "18:00",
-    price: "Darmowe",
     organizer: "Portland Nights Collective",
     tag: "Open air • Family friendly",
     accent: "linear-gradient(135deg, #f97316 0%, #fb7185 100%)",
@@ -217,7 +205,6 @@ export const events: EventItem[] = [
     location: "Pier 62",
     date: "Sob, 19 kwi",
     time: "17:30",
-    price: "99 zł",
     organizer: "Northline Live",
     tag: "Live sets • Waterfront",
     accent: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
@@ -234,7 +221,6 @@ export const events: EventItem[] = [
     location: "South Congress Arts Hall",
     date: "Sob, 20 kwi",
     time: "11:00",
-    price: "69 zł",
     organizer: "Canvas & Co.",
     tag: "Workshop • Creative",
     accent: "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)",
@@ -250,7 +236,6 @@ export const events: EventItem[] = [
     location: "Civic Park Lawn",
     date: "Niedz, 21 kwi",
     time: "7:30",
-    price: "59 zł",
     organizer: "Bloom Collective",
     tag: "Wellness • Community",
     accent: "linear-gradient(135deg, #14b8a6 0%, #22c55e 100%)",
@@ -267,7 +252,6 @@ export const events: EventItem[] = [
     location: "West Loop Yard",
     date: "Pią, 26 kwi",
     time: "20:00",
-    price: "79 zł",
     organizer: "Afterglow Events",
     tag: "DJ • Late night",
     accent: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)",
@@ -283,7 +267,6 @@ export const events: EventItem[] = [
     location: "Mission Bay Loop",
     date: "Sob, 27 kwi",
     time: "16:00",
-    price: "Darmowe",
     organizer: "City Wheels Club",
     tag: "Outdoor • Social ride",
     accent: "linear-gradient(135deg, #22c55e 0%, #0ea5e9 100%)",

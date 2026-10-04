@@ -48,7 +48,6 @@ export type BackendEvent = {
   location?: string;
   date?: string;
   time?: string;
-  price?: string;
   organizer?: string;
   tag?: string;
   accent?: string;

@@ -55,14 +55,6 @@ export default function PostEventPage() {
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-slate-400 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-slate-500 dark:focus:bg-slate-800"
             />
           </label>
-
-          <label className="space-y-2 text-sm font-medium text-slate-700 dark:text-slate-200">
-            {t("price")}
-            <input
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-slate-400 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:border-slate-500 dark:focus:bg-slate-800"
-              placeholder={t("pricePlaceholder")}
-            />
-          </label>
         </div>
 
         <label className="space-y-2 text-sm font-medium text-slate-700 dark:text-slate-200">

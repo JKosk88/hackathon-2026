@@ -55,6 +55,7 @@ function EventsContent() {
   const searchParams = useSearchParams();
   const { language, t } = useLanguage();
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -64,11 +65,11 @@ function EventsContent() {
   const lastLoadAtRef = useRef(0);
   const requestInFlightRef = useRef(false);
 
-  const activeCategory = searchParams.get("category") ?? "all";
+  const activeCategory = searchParams.get("category") ?? "All";
   const activeSort = searchParams.get("sort") ?? "soonest";
   const recommendationQuery = searchParams.get("q") ?? "";
   const activeCategoryFilter =
-    activeCategory === "all" ? undefined : activeCategory;
+    activeCategory === "All" ? undefined : activeCategory;
   const recommendedSearchFilter = recommendationQuery.trim() || undefined;
 
   const loadPage = useCallback(
@@ -89,6 +90,7 @@ function EventsContent() {
         setEvents((currentEvents) =>
           append ? [...currentEvents, ...mappedEvents] : mappedEvents,
         );
+        setTotalCount(page.count ?? mappedEvents.length);
         currentPageRef.current = pageNumber;
         setHasMore(Boolean(page.next));
         setFailedLoads(0);
@@ -125,6 +127,7 @@ function EventsContent() {
 
         const mapped = page.results.map(mapBackendEventToEventItem);
         setEvents(mapped);
+        setTotalCount(page.count ?? mapped.length);
         currentPageRef.current = 1;
         setHasMore(Boolean(page.next));
         setFailedLoads(0);
@@ -321,18 +324,7 @@ function EventsContent() {
   );
 
   const filteredEvents = useMemo(() => {
-    const categoryEvents =
-      activeCategory === "all"
-        ? events
-        : events.filter(
-            (event) =>
-              event.category.toLowerCase() ===
-              categories
-                .find((category) => category.slug === activeCategory)
-                ?.name.toLowerCase(),
-          );
-
-    const scoredEvents = categoryEvents.map((event) => ({
+    const scoredEvents = events.map((event) => ({
       event,
       score: getRecommendationScore(event, recommendationQuery),
     }));
@@ -350,21 +342,9 @@ function EventsContent() {
         .map(({ event }) => event);
     }
 
-    return [...categoryEvents].sort((left, right) => {
+    return [...events].sort((left, right) => {
       if (activeSort === "title") {
         return left.title.localeCompare(right.title);
-      }
-
-      if (activeSort === "price") {
-        const leftPrice =
-          left.price === "Free"
-            ? 0
-            : Number.parseInt(left.price.replace(/\D/g, ""), 10) || 999;
-        const rightPrice =
-          right.price === "Free"
-            ? 0
-            : Number.parseInt(right.price.replace(/\D/g, ""), 10) || 999;
-        return leftPrice - rightPrice;
       }
 
       if (activeSort === "latest") {
@@ -373,13 +353,7 @@ function EventsContent() {
 
       return parseEventDate(left.date) - parseEventDate(right.date);
     });
-  }, [
-    activeCategory,
-    activeSort,
-    events,
-    getRecommendationScore,
-    recommendationQuery,
-  ]);
+  }, [activeSort, events, getRecommendationScore, recommendationQuery]);
 
   const applyFilters = (updates: Record<string, string | null>) => {
     const nextParams = new URLSearchParams(searchParams.toString());
@@ -451,24 +425,22 @@ function EventsContent() {
         <div className="flex flex-wrap gap-2">
           {categories.map((category) => (
             <button
-              key={category.slug}
+              key={category}
               type="button"
               onClick={() =>
-                applyFilters({
-                  category: category.slug === "all" ? null : category.slug,
-                })
+                applyFilters({ category: category === "All" ? null : category })
               }
               className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                activeCategory === category.slug
+                activeCategory === category
                   ? "border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900"
                   : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-700"
               }`}
             >
-              {
-                categoryLabels[category.slug as keyof typeof categoryLabels][
-                  language
-                ]
-              }
+              {categoryLabels[
+                category
+                  .toLowerCase()
+                  .replace(/\s+/g, "-") as keyof typeof categoryLabels
+              ]?.[language] ?? category}
             </button>
           ))}
         </div>
@@ -477,7 +449,7 @@ function EventsContent() {
           <p className="text-sm text-slate-600 dark:text-slate-300">
             {t("showing")}{" "}
             <span className="font-semibold text-slate-900 dark:text-white">
-              {filteredEvents.length}
+              {totalCount}
             </span>{" "}
             {t("eventsCount")}
           </p>
@@ -498,7 +470,6 @@ function EventsContent() {
               <option value="soonest">{t("soonest")}</option>
               <option value="latest">{t("latest")}</option>
               <option value="title">{t("title")}</option>
-              <option value="price">{t("price")}</option>
             </select>
           </div>
         </div>
